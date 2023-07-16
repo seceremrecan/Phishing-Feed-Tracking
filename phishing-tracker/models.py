@@ -17,3 +17,13 @@ class UsomURL(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     url = Column(String, unique=True, index=True)    
+
+class PhishtankURL(Base):
+    __tablename__ = "phishtank_urls"
+    id = Column(Integer, primary_key=True, index=True)
+    url = Column(String, unique=True)
+
+class UrlHaus(Base):
+    __tablename__ = "UrlHaus_urls"
+    id = Column(Integer, primary_key=True, index=True)
+    url = Column(String, unique=True)
