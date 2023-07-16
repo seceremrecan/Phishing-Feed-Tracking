@@ -41,16 +41,17 @@ def fetch_url_data(url):
 
 def save_urls_to_db(db: Session, urls, model):
     """
-    Saves the given URLs to the database.
+    Updates the URLs in the database.
 
     Args:
         db (Session): Database session.
-        urls (list): URLs to be saved.
+        urls (list): URLs to be updated.
         model (Base): Database model.
     """
-    db.query(model).delete()
-    unique_urls = set(urls)
-    db.bulk_save_objects([model(url=url) for url in unique_urls])
+    existing_urls = db.query(model).all()
+    existing_url_set = set(url.url for url in existing_urls)
+    new_urls = [url for url in urls if url not in existing_url_set]
+    db.bulk_save_objects([model(url=url) for url in new_urls])
     db.commit()
 
 
@@ -71,3 +72,16 @@ def fetch_and_save_urls(db: Session, url, model, success_message):
         logging.info(success_message)
     except Exception as e:
         logging.error(f"Error: {str(e)}")
+
+def fetch_and_save_urls_json(db: Session, url: str, model: Base, success_message: str):
+    try:
+        response = requests.get(url)
+        response.raise_for_status()
+
+        data = response.json()
+        urls = [entry['url'] for entry in data]
+
+        save_urls_to_db(db, urls, model)
+        logging.info(success_message)
+    except Exception as e:
+        logging.error(f"Error: {str(e)}")        
