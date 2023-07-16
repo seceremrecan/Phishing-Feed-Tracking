@@ -1,15 +1,11 @@
 from fastapi import FastAPI
-
-
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
-
-from models import Base, PhishingURL, UsomURL
-from database_config import DATABASE_URL, fetch_and_save_urls,SessionLocal
-
+from models import Base, PhishingURL, UsomURL, PhishtankURL,UrlHaus
+from database_config import DATABASE_URL, fetch_and_save_urls, SessionLocal, fetch_and_save_urls_json
 
 engine = create_engine(DATABASE_URL)
-session=SessionLocal()
+session = SessionLocal()
 
 # FastAPI application
 app = FastAPI()
@@ -78,12 +74,43 @@ def get_usom_urls():
     urls = db.query(UsomURL).all()
     return {"usom_urls": [url.url for url in urls]}
 
+@app.get("/urlhaus")
+def get_urlhaus_urls():
+    """
+    Retrieves USOM URLs.
+
+    Returns:
+        dict: Response containing USOM URLs.
+    """
+    db = SessionLocal()
+    urls = db.query(UrlHaus).all()
+    return {"urlhaus": [url.url for url in urls]}
+
+
+@app.get("/phishtank")
+def get_phishtank_urls():
+    """
+    Retrieves Phishtank URLs.
+
+    Returns:
+        dict: Response containing Phishtank URLs.
+    """
+    db = SessionLocal()
+    urls = db.query(PhishtankURL).all()
+    return {"phishtank": [url.url for url in urls]}
+
 
 fetch_and_save_urls(
     session,
     "https://openphish.com/feed.txt",
     PhishingURL,
     "Phishing URLs fetched and saved successfully"
+)
+fetch_and_save_urls(
+    session,
+    "https://urlhaus.abuse.ch/downloads/text_online/",
+    UrlHaus,
+    "UrlHaus URLs fetched and saved successfully"
 )
 
 fetch_and_save_urls(
@@ -92,3 +119,11 @@ fetch_and_save_urls(
     UsomURL,
     "USOM URLs fetched and saved successfully"
 )
+
+# fetch_and_save_urls_json(
+#     session,
+#     "http://data.phishtank.com/data/online-valid.json",
+#     PhishtankURL,
+#     "Phishtank URLs fetched and saved successfully"
+# )
+
