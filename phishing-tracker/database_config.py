@@ -12,7 +12,7 @@ from sqlalchemy.orm import Session
 from models import Base
 
 config = configparser.ConfigParser()
-config.read("/home/emre/Desktop/phishing-tracker/.env")
+config.read(".env")
 
 db_host = os.getenv("DB_HOST", config["database"]["host"])
 db_user = os.getenv("DB_USER", config["database"]["user"])
