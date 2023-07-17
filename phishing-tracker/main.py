@@ -1,11 +1,19 @@
 from fastapi import FastAPI
+import os
+import configparser
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
-from models import Base, PhishingURL, UsomURL, PhishtankURL,UrlHaus
-from database_config import DATABASE_URL, fetch_and_save_urls, SessionLocal, fetch_and_save_urls_json
+from models import Base, PhishingURL, UsomURL, PhishtankURL,UrlHaus,PhishStatsURL
+from database_config import DATABASE_URL, fetch_and_save_urls, SessionLocal, fetch_and_save_urls_csv,fetch_and_save_urls_csv_phishstats
 
 engine = create_engine(DATABASE_URL)
+
+
 session = SessionLocal()
+
+config = configparser.ConfigParser()
+config.read("/home/emre/Desktop/phishing-tracker/.env")
+
 
 # FastAPI application
 app = FastAPI()
@@ -99,31 +107,49 @@ def get_phishtank_urls():
     urls = db.query(PhishtankURL).all()
     return {"phishtank": [url.url for url in urls]}
 
+@app.get("/phishstats")
+def get_phishstats_urls():
+    """
+    Retrieves PhishStats URLs.
+
+    Returns:
+        dict: Response containing PhishStats URLs.
+    """
+    db = SessionLocal()
+    urls = db.query(PhishStatsURL).all()
+    return {"phishstats": [url.url for url in urls]}
+
 
 fetch_and_save_urls(
     session,
-    "https://openphish.com/feed.txt",
+    os.getenv("OpenPhish_URL", config["urls"]["openphish_url"]),
     PhishingURL,
     "Phishing URLs fetched and saved successfully"
 )
 fetch_and_save_urls(
     session,
-    "https://urlhaus.abuse.ch/downloads/text_online/",
+    os.getenv("URLHAUS_URL", config["urls"]["urlhaus_url"]),
     UrlHaus,
     "UrlHaus URLs fetched and saved successfully"
 )
 
 fetch_and_save_urls(
     session,
-    "https://www.usom.gov.tr/url-list.txt",
+    os.getenv("USOM_URL", config["urls"]["usom_url"]),
     UsomURL,
     "USOM URLs fetched and saved successfully"
 )
 
-# fetch_and_save_urls_json(
-#     session,
-#     "http://data.phishtank.com/data/online-valid.json",
-#     PhishtankURL,
-#     "Phishtank URLs fetched and saved successfully"
-# )
+fetch_and_save_urls_csv_phishstats(
+    session,
+    os.getenv("PhishStats_URL", config["urls"]["phishstats_url"]),
+    PhishStatsURL,
+    "PhishStats URLs fetched and saved successfully"
+)
 
+fetch_and_save_urls_csv(
+    session,
+    os.getenv("PhishTank_URL", config["urls"]["phishtank_url"]),
+    PhishtankURL,
+    "Phishtank URLs fetched and saved successfully"
+)
