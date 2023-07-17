@@ -12,7 +12,7 @@ engine = create_engine(DATABASE_URL)
 session = SessionLocal()
 
 config = configparser.ConfigParser()
-config.read("/home/emre/Desktop/phishing-tracker/.env")
+config.read(".env")
 
 
 # FastAPI application
