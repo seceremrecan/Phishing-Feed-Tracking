@@ -5,7 +5,7 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from models import Base, URL
 from database_config import DATABASE_URL, SessionLocal
-from Modules import usom,urlhaus,phishtank,openphish,alienvault
+from Modules import usom,urlhaus,phishtank,openphish,alienvault,alienvault_f21,Github_Daniel_Lopez
 from fastapi.responses import JSONResponse
 from apscheduler.schedulers.background import BackgroundScheduler
 
@@ -15,7 +15,7 @@ engine = create_engine(DATABASE_URL)
 session = SessionLocal()
 
 config = configparser.ConfigParser()
-config.read(".env")
+config.read("/home/emre/Desktop/phishing-tracker/.env")
 
 # FastAPI application
 app = FastAPI()
@@ -43,11 +43,9 @@ def fetch_and_save_data():
     usom.fetch_and_save_usom_urls(session, os.getenv("USOM_URL", config["urls"]["usom_url"]))
     urlhaus.fetch_and_save_urlhaus_urls(session, os.getenv("URLHAUS_URL", config["urls"]["urlhaus_url"]))
     openphish.fetch_and_save_openphish_urls(session, os.getenv("OpenPhish_URL", config["urls"]["openphish_url"]))
-    
-    # Phishtank verilerini her saatte bir güncellemek için
-    phishtank.fetch_and_save_phishtank_csv(session, os.getenv("PhishTank_URL", config["urls"]["phishtank_url"]))
-    
-    #phishstats.fetch_and_save_phishstats_urls(session, os.getenv("PhishStats_URL", config["urls"]["phishstats_url"]))
+    alienvault.fetch_and_save_alienvault_urls(session,os.getenv("AlienVault_URL", config["urls"]["alienvault_url"]))
+    alienvault_f21.fetch_and_save_alienvault_f21_urls(session,os.getenv("AlienVault_F21_URL", config["urls"]["alienvault_f21_url"]))
+    Github_Daniel_Lopez.fetch_and_filter_github_daniel_urls(session,os.getenv("Github_Daniel_Lopze_URL", config["urls"]["github_daniel_lopez_url"]))
 
 @app.get("/")
 def root():
@@ -81,7 +79,7 @@ def get_all_urls():
         urlhaus_urls=db.query(URL).all()
 
         # Get PhishStats URLs
-        phishstats_urls=db.query(URL).all()
+        #phishstats_urls=db.query(URL).all()
         # Get OpenPhish URLs
         openphish_urls=db.query(URL).all()
         # Add more queries for other sources if needed
@@ -92,9 +90,8 @@ def get_all_urls():
             "usom_urls": [url.url for url in usom_urls],
             "phishtank_urls": [url.url for url in phishtank_urls],  #md5 sorunu var onu çöz 
             "urlhaus_urls":[url.url for url in urlhaus_urls],
-            "phishstats_urls":[url.url for url in phishstats_urls],
             "openphish_urls":[url.url for url in openphish_urls],
-            #"alienvault_urls": [url.url for url in alienvault_urls],
+            "alienvault_urls": [url.url for url in alienvault_urls],
             # Add more keys and values for other sources if needed
         }
     except Exception as e:
@@ -113,13 +110,17 @@ openphish.fetch_and_save_openphish_urls(
     session,
     os.getenv("OpenPhish_URL", config["urls"]["openphish_url"])
 )
-#alienvault.scrape_and_save_urls()
-# phishtank.fetch_and_save_phishtank_csv(
-#     session,
-#     os.getenv("PhishTank_URL", config["urls"]["phishtank_url"])
-# )
+alienvault.fetch_and_save_alienvault_urls(
+    session,
+    os.getenv("AlienVault_URL", config["urls"]["alienvault_url"])
+)
+alienvault_f21.fetch_and_save_alienvault_f21_urls(
+    session,
+    os.getenv("AlienVault_F21_URL", config["urls"]["alienvault_f21_url"])
+)
+Github_Daniel_Lopez.fetch_and_filter_github_daniel_urls(
+    session,
+    os.getenv("Github_Daniel_Lopez_URL", config["urls"]["github_daniel_lopez_url"])
+)
 
-# phishstats.fetch_and_save_phishstats_urls(
-#     session,
-#     os.getenv("PhishStats_URL", config["urls"]["phishstats_url"])
-# )
+
