@@ -1,33 +1,29 @@
 import requests
-from bs4 import BeautifulSoup
-from database_config import fetch_url_data, save_urls_to_db
-from sqlalchemy.orm import Session
+from database_config import save_urls_to_db
+from sqlalchemy.orm import Session as DBSession
 from models import URL
-from database_config import SessionLocal
+from sqlalchemy.exc import IntegrityError
 
-url = "https://otx.alienvault.com/browse/global/indicators?include_inactive=0&sort=-modified&page=8&limit=100000&indicatorsSearch=role:%22phishing%22&type=URL"
-
-def scrape_and_save_urls():
+def fetch_and_save_alienvault_urls(db: DBSession, url: str):
     """
-    Scrape URLs from the webpage and save them to the database.
+    Fetches all the HTTP and HTTPS URLs from the given URL.
+
+    Args:
+        url (str): The API URL to fetch the data from.
+
+    Returns:
+        list: List of HTTP and HTTPS URLs.
     """
-    response = requests.get(url)
-    if response.status_code == 200:
-        soup = BeautifulSoup(response.content, "html.parser")
-        urls = []
+    try:
+        response = requests.get(url)
+        response.raise_for_status()
+        data = response.json()
 
-        # Find all the URLs from the page
-        for link in soup.find_all("a", href=True):
-            urls.append(link["href"])
-
-        # Filter out non-URLs and duplicates
-        urls = list(set(filter(lambda u: u.startswith("http") or u.startswith("https"), urls)))
-
-        # Save URLs to the database
-        db = SessionLocal()
+        # Verileri alıp HTTP ve HTTPS ile başlayan URL'leri filtreliyoruz
+        urls = [entry['indicator'] for entry in data['results'] if entry['indicator'].startswith('http://') or entry['indicator'].startswith('https://')]
+        print("AlienVault URLs fetched and saved successfully")
         save_urls_to_db(db, urls, URL)
-        db.close()
-
-        print("URLs fetched and saved to the database successfully.")
-    else:
-        print(f"Failed to fetch the page. Status code: {response.status_code}")
+        return urls
+    except requests.exceptions.RequestException as e:
+        print(f"Hata: {e}")
+        return []
